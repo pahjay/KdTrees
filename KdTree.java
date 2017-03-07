@@ -1,14 +1,12 @@
 import edu.princeton.cs.algs4.Point2D;
+import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.RectHV;
+import edu.princeton.cs.algs4.StdDraw;
+
+import java.awt.*;
 
 /**
  * Created by ryan on 3/7/17.
- *
- * TODO:
- * 1. check logic of insert and root inserts
- * 2. finish implementing helper methods
- * 3. run test cases
- *
  **/
 public class KdTree
 {
@@ -103,21 +101,138 @@ public class KdTree
 
     public boolean contains(Point2D p)
     {
+        return contains(root, p, true);
+    }
 
+    private boolean contains(Node node, Point2D p, boolean orientation)
+    {
+        if (node == null)
+        {
+            return false;
+        }
+        else if (node.p.x() == p.x() && node.p.y() == p.y())
+        {
+            return true;
+        }
+
+        if (orientation)
+        {
+            double cmp = p.x() - node.p.x();
+            if (cmp < 0)
+            {
+                return contains(node.left, p, !orientation);
+            }
+            else
+            {
+                return contains(node.right, p, !orientation);
+            }
+        }
+        else
+        {
+            double cmp = p.y() - node.p.y();
+            if (cmp < 0)
+            {
+                return contains(node.left, p, !orientation);
+            }
+            else
+            {
+                return contains(node.right, p, !orientation);
+            }
+        }
     }
 
     public void draw()
     {
+        draw(root, true);
+    }
 
+    private void draw(Node node, boolean orientation)
+    {
+        if (node == null) return;
+
+        StdDraw.setPenColor(Color.BLACK);
+        StdDraw.setPenRadius(0.01);
+        node.p.draw();
+        // True  == Vertical
+        // False == Horizontal
+        if (orientation)
+        {
+            StdDraw.setPenColor(Color.RED);
+            StdDraw.setPenRadius();
+            StdDraw.line(node.p.x(), node.r.ymin(), node.p.x(), node.r.ymax());
+        }
+        else
+        {
+            StdDraw.setPenColor(Color.BLUE);
+            StdDraw.setPenRadius();
+            StdDraw.line(node.r.xmin(), node.p.y(), node.r.xmax(), node.p.y());
+        }
     }
 
     public Iterable<Point2D> range(RectHV rect)
     {
-
+        Queue<Point2D> q = new Queue<>();
+        range(root, rect, q);
+        return q;
     }
 
-    public Point2D nearest(Point2D P)
+    private void range(Node n, RectHV r, Queue<Point2D> q)
     {
+        if (n == null)
+        {
+            return;
+        }
 
+        if (r.contains(n.p))
+        {
+            q.enqueue(n.p);
+        }
+
+        // check L and R subtrees to see if they intersect with input rectangle
+        if (r.intersects(n.r))
+        {
+            range(n.left,  r, q);
+            range(n.right, r, q);
+        }
     }
+
+    public Point2D nearest(Point2D p)
+    {
+        return nearest(root, p, root.p, true);
+    }
+
+    private Point2D nearest(Node node, Point2D p, Point2D q, boolean orientation)
+    {
+        Point2D nearest = q;
+        Node near, far;
+        if (node == null) return nearest;
+
+        if (node.p.distanceTo(p) < nearest.distanceTo(p))
+        {
+            nearest = node.p;
+        }
+
+        // check to see if current rectangle is closer to p than the closets point
+        if (node.r.distanceTo(p) < nearest.distanceTo(p))
+        {
+            if ((orientation && (p.x() < node.p.x()) || (!orientation && (p.y() < node.p.y()))))
+            {
+                near = node.left;
+                far = node.right;
+            }
+            else
+            {
+                near = node.right;
+                far = node.left;
+            }
+            // check subtree on same side as p
+            nearest = nearest(near, p, nearest, !orientation);
+            // check subtree on opposite side of p
+            nearest = nearest(far, p, nearest, !orientation);
+        }
+
+        return nearest;
+    }
+
+
 }

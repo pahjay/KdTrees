@@ -42,7 +42,7 @@ public class PointSET
             p.draw();
     }
 
-    public Iterable<Point2D> rang(RectHV rect)
+    public Iterable<Point2D> range(RectHV rect)
     {
         Stack<Point2D> s = new Stack<>();
 
